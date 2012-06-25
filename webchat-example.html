@@ -1,0 +1,153 @@
+<html>
+<head>
+<title>Web Chat Example</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script src="http://localhost:8080/socket.io/socket.io.js"></script>
+<script src="chatLib.js"></script>
+<script>
+
+
+	function createChatWindow()
+	{
+		var height = $(document).height();
+		var width = $(document).width();
+
+		$('#userList').css('width', '150px');
+		$('#chatInput').css('height', '30px');
+
+		$('#userList').css('height', (height - 35) + 'px');
+
+		$('#chatText').css('height', (height - 35) + 'px');
+		$('#chatText').css('width', (width - 150) + 'px');
+		$('#chatInput').css('width', width + 'px');
+
+		$('#userList').css('top', '0px').css('left', '0px');
+		$('#chatInput').css('top', (height - 35) + 'px').css('left', '0px');
+		$('#chatText').css('top', '0px').css('left', '150px');
+
+		$('#chatInputTextBox').css('height', '30px');
+		$('#chatInputTextBox').css('width', width + 'px');
+	}
+
+	function centerLogin()
+	{
+		var height = $(document).height();
+		var width = $(document).width();
+
+		$('#loginContainer').css('top', height/2 - $('#loginContainer').height()/2);
+		$('#loginContainer').css('left', width/2 - $('#loginContainer').width()/2);
+
+	}
+</script>
+<script>
+	chatLib.debug = true;
+	chatLib.serverName = 'localhost:8080';
+
+	chatLib.onConnect = function ()
+	{
+		$('#loginSection').hide();
+		$('#chatSection').show();
+	}
+
+	var userList = [];
+
+	chatLib.onUserList = function(usersList)
+	{
+		userList = usersList;
+		updateUsers();
+	}
+
+	chatLib.onJoin = function(userName)
+	{
+		userList.push(userName);
+		updateUsers();
+	}
+
+	chatLib.onPart = function(userName)
+	{
+		var idx = userList.indexOf(userName);
+		if(idx != -1) userList.splice(idx, 1);
+
+		updateUsers();
+	}
+
+	function updateUsers()
+	{
+		$('#userList').children().remove();
+
+		for(var i = 0; i < userList.length; i++)
+		{
+			var user = userList[i];
+			$('#userList').append( $('<div></div>').text(user));
+		}
+	}
+
+	chatLib.onMessage = function(userName, message)
+	{
+		$('#chatText').append( $('<div></div>').text('<' + userName + '> ' + message));
+	}
+
+	$(document).ready(function () {
+		$("#loginSection").show();
+
+		createChatWindow();
+		centerLogin();
+
+		$('#ConnectButton').click(function () {
+			var userName = $('#UserNameTextBox').val();
+			if(userName == '')
+			{
+				return;
+			}
+
+			chatLib.userName = userName;
+			chatLib.connectToChat();
+
+			$('#chatInputTextBox').keypress( function() {
+				if ( event.which == 13 ) {
+					chatLib.sendMessage($(this).val());
+					$(this).val('');
+				    event.preventDefault();
+				}
+			});
+		});
+
+	});
+
+	$(window).resize( function() {
+		createChatWindow();
+		centerLogin();
+	});
+</script>
+</head>
+<body>
+
+<section id="loginSection" style="display: none;">
+	<div id="loginContainer" style="border: 1px solid black; width: 265px; border-radius: 5px; position: absolute;">
+		<table style="padding: 10px; text-align: center;">
+			<tr>
+				<td>User Name:</td>
+				<td><input type="textbox" id="UserNameTextBox"/></td>
+			</tr>
+			<tr>
+				<td colspan="2"><button id="ConnectButton">Connect</button></td>
+			</tr>
+		</table>
+	</div>
+</section>
+
+<section id="chatSection" style="display: none;">
+	<div id="userList" style="border-right: 1px solid black; position: absolute;">
+	</div>
+
+	<div id="chatText" style="position: absolute; padding: 5px;">
+
+	</div>
+
+	<div id="chatInput" style="border-top: 1px solid black; position: absolute;">
+		<input type="textbox" id="chatInputTextBox" style="padding: 0px; margin: 0px;"></input>
+	</div>
+</section>
+
+</body>
+</html>
